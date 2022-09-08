@@ -62,18 +62,24 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.RealType;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
+import org.janelia.saalfeldlab.n5.metadata.N5Metadata;
+import org.janelia.saalfeldlab.n5.metadata.SpatialMetadataGroup;
+import org.janelia.saalfeldlab.n5.metadata.axes.AxisMetadata;
 import org.janelia.saalfeldlab.n5.zarr.N5ZarrReader;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static net.imglib2.cache.volatiles.LoadingStrategy.BUDGETED;
 import static net.imglib2.img.basictypeaccess.AccessFlags.DIRTY;
 import static net.imglib2.img.basictypeaccess.AccessFlags.VOLATILE;
 
-class ZarrImagePyramid< T extends NativeType< T > & RealType< T >, V extends Volatile< T > & NativeType< V > & RealType< V > > implements ImagePyramid< T, V >
+class ZarrImagePyramid< T extends NativeType< T > & RealType< T >, V extends Volatile< T > & NativeType< V > & RealType< V > > implements ImagePyramid< T, V >, 
+	SpatialMetadataGroup, AxisMetadata
 {
 	/**
 	 * Number of resolutions pyramid levels
@@ -342,5 +348,57 @@ class ZarrImagePyramid< T extends NativeType< T > & RealType< T >, V extends Vol
 		default:
 			throw new IllegalArgumentException();
 		}
+	}
+
+	@Override
+	public String[] getPaths() {
+		return null;
+	}
+
+	@Override
+	public N5Metadata[] getChildrenMetadata() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getPath() {
+		return zArrayPath;
+	}
+
+	@Override
+	public String[] units() {
+		return getUnits();
+	}
+
+	@Override
+	public String[] getAxisLabels() {
+		final char[] chars = AxisOrder.XYZCT.toString().toCharArray();
+		final String[] labels = new String[ chars.length ];
+		int i = 0;
+		for( char c : chars )
+			labels[i++] = String.valueOf(c);
+
+		return labels;
+	}
+
+	@Override
+	public String[] getAxisTypes() {
+		return IntStream.range(0, axisOrder.numDimensions())
+			.mapToObj( i -> {
+				if( axisOrder.hasChannels() && axisOrder.channelDimension() == i)
+					return "channel";
+				else if ( axisOrder.hasTimepoints() && axisOrder.timeDimension() == i)
+					return "time";
+				else
+					return "space";
+			}).toArray( String[]::new );
+	}
+
+	@Override
+	public String[] getUnits() {
+		final String[] unknownUnits = new String[ axisOrder.numDimensions() ];
+		Arrays.fill(unknownUnits, "px");
+		return unknownUnits;
 	}
 }

@@ -28,9 +28,9 @@
  */
 package org.embl.mobie.io.ome.zarr;
 
-import Imaris.IDataSetPrx;
 import bdv.util.volatiles.SharedQueue;
-import com.bitplane.xt.util.ColorTableUtils;
+
+import org.janelia.saalfeldlab.n5.metadata.N5MetadataGroup;
 import org.scijava.Context;
 
 import javax.annotation.Nullable;
@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class OMEZarrData
+public class OMEZarrData implements N5MetadataGroup<ZarrImagePyramid<?, ?>>
 {
 	private final Context context;
 	private final String omeZarrPath;
@@ -78,5 +78,21 @@ public class OMEZarrData
 	public Set< String > getPyramidNames()
 	{
 		return imagePyramids.keySet();
+	}
+
+	@Override
+	public String getPath() {
+		// this method returns the path relative to the root of the zarr container
+		return "/"; // TODO is this object always the root?
+	}
+
+	@Override
+	public String[] getPaths() {
+		return imagePyramidPaths;
+	}
+
+	@Override
+	public ZarrImagePyramid<?, ?>[] getChildrenMetadata() {
+		return (ZarrImagePyramid<?, ?>[]) imagePyramids.values().toArray();
 	}
 }
